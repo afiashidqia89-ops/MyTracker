@@ -1,0 +1,8 @@
+{
+  "appId": "com.iqbal.mytracker",
+  "appName": "MyTracker",
+  "webDir": "www",
+  "backgroundColor": "#060b14",
+  "android": { "backgroundColor": "#060b14" },
+  "plugins": { "StatusBar": { "style": "DARK", "backgroundColor": "#060b14" } }
+}
