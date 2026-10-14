@@ -467,8 +467,8 @@ let pd=pg.ref&&O[pg.ref.num];
 if(!pd||!(pd.VP||pd.LGIDict)){pd=null;for(const k in O){const d=O[k];if(d&&typeof d==='object'&&!Array.isArray(d)&&(d.VP||d.LGIDict)&&(!d.Type||d.Type.n==='Page')){pd=d;break}}}
 if(!pd)return null;
 let best=null;for(const x of[].concat(rs(pd.VP)||[]).map(rs)){if(!x||!x.Measure)continue;const m=rs(x.Measure),bb=(rs(x.BBox)||[]).map(Number);if(!m||!m.GPTS||!m.LPTS||bb.length<4)continue;const a=Math.abs((bb[2]-bb[0])*(bb[3]-bb[1]));if(!best||a>best.a)best={a,m,bb}}
-if(best){const G=rs(best.m.GPTS).map(Number),L=rs(best.m.LPTS).map(Number),bb=best.bb,gcs=rs(best.m.GCS)||{},x0=Math.min(bb[0],bb[2]),x1=Math.max(bb[0],bb[2]),y0=Math.min(bb[1],bb[3]),y1=Math.max(bb[1],bb[3]),pts=[];
-for(let k=0;2*k+1<G.length&&2*k+1<L.length;k++){let la=G[2*k],lo=G[2*k+1];if(Math.abs(la)>90&&Math.abs(lo)<=90)[la,lo]=[lo,la];const p=vp.convertToViewportPoint(x0+L[2*k]*(x1-x0),y0+L[2*k+1]*(y1-y0));if([la,lo,p[0],p[1]].every(isFinite))pts.push({px:p[0],py:p[1],lat:la,lon:lo})}
+if(best){const G=rs(best.m.GPTS).map(Number),L=rs(best.m.LPTS).map(Number),bb=best.bb,gcs=rs(best.m.GCS)||{},pts=[];
+for(let k=0;2*k+1<G.length&&2*k+1<L.length;k++){let la=G[2*k],lo=G[2*k+1];if(Math.abs(la)>90&&Math.abs(lo)<=90)[la,lo]=[lo,la];const p=vp.convertToViewportPoint(bb[0]+L[2*k]*(bb[2]-bb[0]),bb[1]+L[2*k+1]*(bb[3]-bb[1]));if([la,lo,p[0],p[1]].every(isFinite))pts.push({px:p[0],py:p[1],lat:la,lon:lo})}
 return{kind:'GeoPDF OGC',pts,proj:projFrom(gcs.WKT&&gcs.WKT.s?gcs.WKT.s:'',typeof gcs.EPSG==='number'?gcs.EPSG:0)}}
 const lg=[].concat(rs(pd.LGIDict)||[]).map(rs).find(d=>d&&d.CTM);
 if(lg){const C=rs(lg.CTM).map(Number),pr=rs(lg.Projection)||{},pt=pr.ProjectionType?(pr.ProjectionType.s||pr.ProjectionType.n||''):'';let proj=null,toLL;
