@@ -1,0 +1,23 @@
+{
+  "appId": "com.my.tracker",
+  "appName": "MyTracker",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": true,
+    "backgroundColor": "#0a0a0a"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 800,
+      "backgroundColor": "#0a0a0a",
+      "showSpinner": false,
+      "androidScaleType": "CENTER_CROP"
+    },
+    "Geolocation": {
+      "permissions": ["location"]
+    }
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}

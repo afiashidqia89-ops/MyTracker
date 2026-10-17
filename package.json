@@ -1,0 +1,28 @@
+{
+  "name": "mytracker-android",
+  "version": "1.0.0",
+  "description": "MyTracker — WebView wrapper (Capacitor) untuk aplikasi peta & GPS dengan tagging, tracking, export XLSX offline.",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "sync": "cap sync android",
+    "build:apk": "cd android && ./gradlew assembleDebug",
+    "build:release": "cd android && ./gradlew assembleRelease",
+    "open:android": "cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/app": "^6.0.1",
+    "@capacitor/geolocation": "^6.0.1",
+    "@capacitor/core": "^6.1.2",
+    "@capacitor/haptics": "^6.0.1",
+    "@capacitor/status-bar": "^6.0.1",
+    "@capacitor/filesystem": "^6.0.1",
+    "@capacitor/share": "^6.0.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.2",
+    "typescript": "^5.5.4",
+    "@types/node": "^20.14.10"
+  }
+}

@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Gradle wrapper bootstrap — auto-download gradle-wrapper.jar if missing
+set -e
+APP_HOME=$(cd "$(dirname "$0")" && pwd)
+WRAPPER_JAR="$APP_HOME/gradle/wrapper/gradle-wrapper.jar"
+WRAPPER_PROPS="$APP_HOME/gradle/wrapper/gradle-wrapper.properties"
+GRADLE_VERSION="8.7"
+GRADLE_DIST_URL="https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip"
+
+if [ ! -f "$WRAPPER_JAR" ]; then
+  echo "gradle-wrapper.jar missing, downloading from gradle/gradle GitHub…"
+  mkdir -p "$APP_HOME/gradle/wrapper"
+  curl -fsSL -o "$WRAPPER_JAR" \
+    "https://raw.githubusercontent.com/gradle/gradle/v${GRADLE_VERSION}/gradle/wrapper/gradle-wrapper.jar"
+fi
+
+if [ ! -f "$WRAPPER_PROPS" ]; then
+  cat > "$WRAPPER_PROPS" <<EOF
+distributionBase=GRADLE_USER_HOME
+distributionPath=wrapper/dists
+distributionUrl=${GRADLE_DIST_URL}
+networkTimeout=10000
+zipStoreBase=GRADLE_USER_HOME
+zipStorePath=wrapper/dists
+EOF
+fi
+
+if command -v java >/dev/null 2>&1; then
+  exec java -classpath "$WRAPPER_JAR" org.gradle.wrapper.GradleWrapperMain "$@"
+else
+  echo "Java is required to run Gradle. Please install Java 17+."
+  exit 1
+fi
