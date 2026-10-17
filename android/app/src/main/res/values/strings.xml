@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="app_name">MyTracker</string>
-    <string name="title_activity_main">MyTracker</string>
-    <string name="launcher_name">@string/app_name</string>
-    <string name="package_name">com.my.tracker</string>
-    <string name="custom_url_scheme">https</string>
-</resources>
