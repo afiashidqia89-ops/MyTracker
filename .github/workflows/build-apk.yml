@@ -59,6 +59,10 @@ jobs:
 
       - name: Print project state (for diagnostics)
         run: |
+          # Disable set -e so a missing file or failed ls/cat does NOT fail the build.
+          # This step is purely informational — diagnostics only.
+          set +e
+          set +o pipefail
           echo "=== package.json ==="
           cat package.json
           echo ""
@@ -66,15 +70,22 @@ jobs:
           ls -la node_modules/@capacitor/ 2>/dev/null || echo "✗ @capacitor/* tidak terinstall"
           echo ""
           echo "=== android/app/build.gradle ==="
-          cat android/app/build.gradle
+          if [ -f android/app/build.gradle ]; then cat android/app/build.gradle; else echo "✗ android/app/build.gradle tidak ada"; fi
           echo ""
           echo "=== android/settings.gradle ==="
-          cat android/settings.gradle
+          if [ -f android/settings.gradle ]; then cat android/settings.gradle; else echo "✗ android/settings.gradle tidak ada"; fi
           echo ""
           echo "=== Check node_modules/@capacitor/* exist? ==="
-          for p in android app geolocation haptics status-bar filesystem share; do
-            ls node_modules/@capacitor/$p/android/ 2>/dev/null | head -3 || echo "✗ $p plugin Android tidak ada"
+          for p in android app core geolocation haptics status-bar filesystem share; do
+            if [ -d "node_modules/@capacitor/$p/android" ]; then
+              echo "✓ @capacitor/$p/android: exists"
+            else
+              echo "✗ @capacitor/$p/android: TIDAK ADA (plugin mungkin tidak punya folder android/)"
+            fi
           done
+          echo ""
+          echo "=== Project state printed successfully (diagnostic step complete) ==="
+          exit 0
 
       - name: Verify app/build.gradle uses subproject references
         working-directory: android
