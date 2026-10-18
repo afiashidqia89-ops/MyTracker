@@ -5,7 +5,7 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
-  workflow_dispatch:  # allow manual trigger from Actions tab
+  workflow_dispatch:
 
 jobs:
   build:
@@ -27,8 +27,6 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      # Ubuntu runner sudah punya Android SDK pre-installed di /usr/local/lib/android/sdk.
-      # Hanya perlu pastikan paket platform-tools, platforms;android-34, dan build-tools;34.0.0 terinstall.
       - name: Configure Android SDK
         run: |
           echo "ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> $GITHUB_ENV
@@ -59,8 +57,6 @@ jobs:
 
       - name: Print project state (for diagnostics)
         run: |
-          # Disable set -e so a missing file or failed ls/cat does NOT fail the build.
-          # This step is purely informational — diagnostics only.
           set +e
           set +o pipefail
           echo "=== package.json ==="
@@ -75,16 +71,24 @@ jobs:
           echo "=== android/settings.gradle ==="
           if [ -f android/settings.gradle ]; then cat android/settings.gradle; else echo "✗ android/settings.gradle tidak ada"; fi
           echo ""
+          echo "=== Check android/gradlew exists? ==="
+          if [ -f android/gradlew ]; then
+            echo "✓ android/gradlew exists"
+            ls -la android/gradlew
+          else
+            echo "✗ android/gradlew TIDAK ADA — akan dibuat di step selanjutnya"
+          fi
+          echo ""
           echo "=== Check node_modules/@capacitor/* exist? ==="
           for p in android app core geolocation haptics status-bar filesystem share; do
             if [ -d "node_modules/@capacitor/$p/android" ]; then
               echo "✓ @capacitor/$p/android: exists"
             else
-              echo "✗ @capacitor/$p/android: TIDAK ADA (plugin mungkin tidak punya folder android/)"
+              echo "✗ @capacitor/$p/android: TIDAK ADA"
             fi
           done
           echo ""
-          echo "=== Project state printed successfully (diagnostic step complete) ==="
+          echo "=== Project state printed successfully ==="
           exit 0
 
       - name: Verify app/build.gradle uses subproject references
@@ -110,15 +114,49 @@ jobs:
             echo ""
             echo "=== Contents of assets/public/ (web app) ==="
             ls -la app/src/main/assets/public/ 2>/dev/null | head -20 || echo "✗ public/ folder tidak ada"
-            echo ""
-            echo "=== capacitor.plugins.json (generated) ==="
-            cat app/src/main/assets/capacitor.plugins.json 2>/dev/null || echo "✗ tidak ada"
           else
             echo "✗ Folder assets/ tidak ada — npx cap sync GAGAL."
             exit 1
           fi
 
-      - name: Generate Gradle wrapper (if missing)
+      - name: Ensure gradlew script exists (auto-create if missing)
+        working-directory: android
+        run: |
+          if [ ! -f gradlew ]; then
+            echo "⚠ gradlew script tidak ada — auto-create..."
+            cat > gradlew << 'GRADLEW_EOF'
+          #!/usr/bin/env bash
+          set -e
+          APP_HOME=$(cd "$(dirname "$0")" && pwd)
+          WRAPPER_JAR="$APP_HOME/gradle/wrapper/gradle-wrapper.jar"
+          WRAPPER_PROPS="$APP_HOME/gradle/wrapper/gradle-wrapper.properties"
+          GRADLE_VERSION="8.7"
+          GRADLE_DIST_URL="https://services.gradle.org/distributions/gradle-\${GRADLE_VERSION}-bin.zip"
+          if [ ! -f "\$WRAPPER_JAR" ]; then
+            echo "gradle-wrapper.jar missing, downloading..."
+            mkdir -p "\$APP_HOME/gradle/wrapper"
+            curl -fsSL -o "\$WRAPPER_JAR" "https://raw.githubusercontent.com/gradle/gradle/v\${GRADLE_VERSION}/gradle/wrapper/gradle-wrapper.jar"
+          fi
+          if [ ! -f "\$WRAPPER_PROPS" ]; then
+            cat > "\$WRAPPER_PROPS" <<EOF
+          distributionBase=GRADLE_USER_HOME
+          distributionPath=wrapper/dists
+          distributionUrl=\${GRADLE_DIST_URL}
+          networkTimeout=10000
+          zipStoreBase=GRADLE_USER_HOME
+          zipStorePath=wrapper/dists
+          EOF
+          fi
+          exec java -classpath "\$WRAPPER_JAR" org.gradle.wrapper.GradleWrapperMain "\$@"
+          GRADLEW_EOF
+            chmod +x gradlew
+            echo "✓ gradlew script auto-created"
+          else
+            echo "✓ gradlew script already exists"
+          fi
+          ls -la gradlew
+
+      - name: Generate Gradle wrapper jar (if missing)
         working-directory: android
         run: |
           if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
@@ -215,7 +253,37 @@ jobs:
       - name: Sync web assets
         run: npx cap sync android
 
-      - name: Generate Gradle wrapper (if missing)
+      - name: Ensure gradlew script exists
+        working-directory: android
+        run: |
+          if [ ! -f gradlew ]; then
+            cat > gradlew << 'GRADLEW_EOF'
+          #!/usr/bin/env bash
+          set -e
+          APP_HOME=$(cd "$(dirname "$0")" && pwd)
+          WRAPPER_JAR="$APP_HOME/gradle/wrapper/gradle-wrapper.jar"
+          WRAPPER_PROPS="$APP_HOME/gradle/wrapper/gradle-wrapper.properties"
+          GRADLE_VERSION="8.7"
+          if [ ! -f "$WRAPPER_JAR" ]; then
+            mkdir -p "$APP_HOME/gradle/wrapper"
+            curl -fsSL -o "$WRAPPER_JAR" "https://raw.githubusercontent.com/gradle/gradle/v${GRADLE_VERSION}/gradle/wrapper/gradle-wrapper.jar"
+          fi
+          if [ ! -f "$WRAPPER_PROPS" ]; then
+            cat > "$WRAPPER_PROPS" <<EOF
+          distributionBase=GRADLE_USER_HOME
+          distributionPath=wrapper/dists
+          distributionUrl=https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip
+          networkTimeout=10000
+          zipStoreBase=GRADLE_USER_HOME
+          zipStorePath=wrapper/dists
+          EOF
+          fi
+          exec java -classpath "$WRAPPER_JAR" org.gradle.wrapper.GradleWrapperMain "$@"
+          GRADLEW_EOF
+            chmod +x gradlew
+          fi
+
+      - name: Generate Gradle wrapper jar (if missing)
         working-directory: android
         run: |
           if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
